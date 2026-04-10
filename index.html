@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Bricolage+Grotesque:wght@300;400;600&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2726176435169276" crossorigin="anonymous"></script>
+<style>
+:root{--white:#fff;--off:#fafaf8;--ink:#1a1a18;--ink2:#3d3d38;--ink3:#8a8a82;--accent:#c8a96e;--accent2:#e8d5aa;--red:#d94f3d;--green:#3d9a6e;--blue:#3d6e9a;--border:#e8e8e2;--r:16px;--r-sm:10px;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--white);color:var(--ink);font-family:'Bricolage Grotesque',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* AD LAYOUT */
+#page-wrap{display:flex;align-items:flex-start;width:100%;}
+#ad-left{width:160px;min-width:160px;flex-shrink:0;position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;padding:8px 4px;}
+#ad-right{width:160px;min-width:160px;flex-shrink:0;position:sticky;top:0;height:100vh;display:flex;align-items:center;justify-content:center;padding:8px 4px;}
+#main-content{flex:1;min-width:0;overflow:hidden;}
+#ad-bottom{width:100%;padding:0;display:flex;justify-content:center;background:var(--off);border-top:1px solid var(--border);}
+.ad-slot-v{width:160px;min-height:600px;}
+.ad-slot-h{width:100%;max-width:160px;min-height:600px;}
+@media(max-width:900px){#ad-left,#ad-right{display:none;}}
+@media(max-width:700px){#ad-bottom{display:none;}}
+
+/* TICKER */
+#top-strip{background:var(--ink);padding:10px 0;overflow:hidden;position:relative;}
+#top-strip::before,#top-strip::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;}
+#top-strip::before{left:0;background:linear-gradient(90deg,var(--ink),transparent);}
+#top-strip::after{right:0;background:linear-gradient(-90deg,var(--ink),transparent);}
+.ticker-track{display:flex;animation:ticker 55s linear infinite;width:max-content;}
+.ti{display:flex;align-items:center;gap:10px;padding:0 36px;white-space:nowrap;font-family:'DM Mono',monospace;font-size:12px;}
+.ti .cn{color:rgba(232,213,170,.45);font-size:10px;letter-spacing:.12em;text-transform:uppercase;}
+.ti .ct{color:#e8d5aa;font-size:13px;font-weight:500;}
+.tdot{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:.45;}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* HERO — bigger */
+#hero{padding:56px 40px 20px;text-align:center;position:relative;}
+.hlabel{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;margin-bottom:10px;}
+.hloc{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink2);font-style:italic;margin-bottom:4px;}
+#ltime{font-family:'DM Mono',monospace;font-size:clamp(80px,18vw,180px);font-weight:300;letter-spacing:-.04em;color:var(--ink);line-height:1;display:inline-block;}
+#ltime .col{animation:blink .9s step-end infinite;color:var(--accent);}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.12}}
+#lampm{font-family:'DM Mono',monospace;font-size:22px;color:var(--accent);letter-spacing:.1em;margin-left:8px;vertical-align:super;}
+#ldate{font-family:'DM Mono',monospace;font-size:12px;color:var(--ink3);margin-top:10px;letter-spacing:.07em;}
+.tzbadge{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink3);background:var(--border);padding:2px 8px;border-radius:20px;margin-top:6px;display:inline-block;}
+
+/* ADD CITY BUTTON below hero */
+#hero-add-wrap{display:flex;justify-content:center;padding:20px 40px 0;}
+.hero-add-btn{display:flex;align-items:center;gap:8px;border:1.5px dashed var(--border);border-radius:30px;padding:9px 22px;background:transparent;cursor:pointer;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--ink3);transition:border-color .2s,color .2s,background .2s;}
+.hero-add-btn:hover{border-color:var(--accent);color:var(--ink);background:var(--off);}
+.hero-add-btn .plus{font-size:18px;color:var(--accent);line-height:1;}
+
+/* CITY CLOCKS GRID — same big size as main */
+#city-clocks{padding:0 40px 40px;border-bottom:1px solid var(--border);}
+.city-clocks-grid{display:flex;flex-direction:column;gap:0;}
+.cg{display:flex;align-items:baseline;justify-content:center;gap:40px;padding:22px 0;border-top:1px solid var(--border);position:relative;animation:fadeUp .35s ease both;}
+.cg-loc{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink2);font-style:italic;text-align:right;min-width:160px;flex-shrink:0;}
+.cg-time-wrap{display:flex;align-items:baseline;gap:0;}
+.cg-time{font-family:'DM Mono',monospace;font-size:clamp(80px,18vw,180px);font-weight:300;letter-spacing:-.04em;color:var(--ink);line-height:1;}
+.cg-time .col{color:var(--accent);opacity:.5;}
+.cg-ampm{font-family:'DM Mono',monospace;font-size:22px;color:var(--accent);letter-spacing:.1em;margin-left:8px;vertical-align:super;}
+.cg-meta{min-width:160px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;padding-bottom:4px;}
+.cg-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3);}
+.cg-off{font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);background:var(--accent2);padding:2px 8px;border-radius:20px;display:inline-block;}
+.cg-del{position:absolute;top:50%;right:0;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--ink3);font-size:14px;cursor:pointer;opacity:0;transition:opacity .15s,background .15s;display:flex;align-items:center;justify-content:center;}
+.cg:hover .cg-del{opacity:1;}
+.cg-del:hover{background:#fce8e5;color:var(--red);}
+.di{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.di.day{background:#f5c842;}.di.night{background:#3d6e9a;}.di.dusk{background:#e8843d;}
+
+
+/* SECTION */
+.sec-wrap{padding:36px 40px;}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.sec-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+.add-btn{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);color:var(--ink3);font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,border-color .15s,color .15s;}
+.add-btn:hover{background:var(--accent2);border-color:var(--accent);color:var(--ink);}
+
+
+
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-bg.open{opacity:1;pointer-events:all;}
+.modal{background:var(--white);border-radius:20px;width:min(92vw,480px);max-height:82vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.18);transform:translateY(12px);transition:transform .25s;}
+.modal-bg.open .modal{transform:none;}
+.mhdr{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.mtitle{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);}
+.mclose{width:28px;height:28px;border-radius:50%;border:none;background:var(--off);cursor:pointer;font-size:16px;color:var(--ink3);display:flex;align-items:center;justify-content:center;transition:background .15s;}
+.mclose:hover{background:var(--border);}
+.msearch{padding:12px 24px;border-bottom:1px solid var(--border);}
+.msearch input{width:100%;border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink);outline:none;background:var(--off);transition:border-color .2s;}
+.msearch input:focus{border-color:var(--accent);background:#fff;}
+.clist{overflow-y:auto;flex:1;}
+.cli{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;cursor:pointer;transition:background .12s;}
+.cli:hover{background:var(--off);}
+.cli.active{background:var(--accent2);}
+.cli-n{font-size:14px;color:var(--ink);}
+.cli-z{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink3);}
+.cli-ck{color:var(--accent);font-size:16px;opacity:0;}
+.cli.active .cli-ck{opacity:1;}
+
+/* SEP */
+.sep{height:1px;background:var(--border);margin:0 40px;}
+.di{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.di.day{background:#f5c842;}.di.night{background:#3d6e9a;}.di.dusk{background:#e8843d;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* TIMERS */
+#timer-sec{padding:40px 40px 40px;}
+.timers-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.tc{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:22px 18px 18px;width:215px;flex:0 0 215px;display:flex;flex-direction:column;gap:12px;box-shadow:0 2px 20px rgba(0,0,0,.06);animation:fadeUp .4s ease both;transition:box-shadow .2s;}
+.tc:hover{box-shadow:0 8px 40px rgba(0,0,0,.10);}
+.tn-input{border:none;background:transparent;font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:600;color:var(--ink);outline:none;width:100%;border-bottom:1px dashed transparent;padding-bottom:2px;transition:border-color .2s;}
+.tn-input::placeholder{color:var(--ink3);font-weight:400;}
+.tn-input:focus{border-bottom-color:var(--accent);}
+.tdisp{display:flex;align-items:center;justify-content:center;position:relative;}
+.tsvg{width:118px;height:118px;transform:rotate(-90deg);}
+.ttrack{fill:none;stroke:var(--border);stroke-width:6;}
+.tprog{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+.tcenter{position:absolute;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.tdigits{font-family:'DM Mono',monospace;font-size:21px;font-weight:400;letter-spacing:-.02em;color:var(--ink);line-height:1;}
+.tstatus{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:3px;}
+.tinputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+.tiwrap{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;}
+.tiwrap label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;}
+.tiwrap input{width:100%;text-align:center;border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 2px;font-family:'DM Mono',monospace;font-size:16px;color:var(--ink);background:var(--off);outline:none;transition:border-color .2s,background .2s;-moz-appearance:textfield;}
+.tiwrap input::-webkit-inner-spin-button,.tiwrap input::-webkit-outer-spin-button{-webkit-appearance:none;}
+.tiwrap input:focus{border-color:var(--accent);background:#fff;}
+/* Arrow controls on hover */
+.num-arrows{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .15s;pointer-events:none;}
+.tiwrap:hover .num-arrows{opacity:1;pointer-events:all;}
+.na{width:14px;height:13px;border:none;background:var(--accent2);color:var(--ink2);font-size:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s;border-radius:3px;line-height:1;padding:0;}
+.na:hover{background:var(--accent);color:#fff;}
+.presets{display:flex;gap:4px;flex-wrap:wrap;}
+.pb{font-family:'DM Mono',monospace;font-size:9px;border:1px solid var(--border);background:var(--off);color:var(--ink3);border-radius:20px;padding:3px 7px;cursor:pointer;transition:background .15s,color .15s,border-color .15s;}
+.pb:hover{background:var(--accent2);color:var(--ink);border-color:var(--accent);}
+.tbrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.btn{border:none;border-radius:var(--r-sm);padding:9px 10px;font-family:'Bricolage Grotesque',sans-serif;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:transform .15s,background .2s;}
+.btn:active{transform:scale(.97);}
+.btn-s{background:var(--ink);color:#fff;}.btn-s:hover{background:var(--ink2);}
+.btn-p{background:var(--accent2);color:var(--ink);}.btn-p:hover{background:#ddc882;}
+.btn-r{background:var(--off);color:var(--ink2);border:1px solid var(--border);}.btn-r:hover{background:var(--border);}
+.btn-d{background:#fce8e5;color:var(--red);}.btn-d:hover{background:#f5cdc8;}
+.btn-run{background:var(--accent);color:#fff;}.btn-run:hover{background:#b8956a;}
+@keyframes alFlash{0%,100%{background:var(--white)}50%{background:#fce8e5}}
+.tc.alarming{animation:alFlash .4s ease infinite;border-color:var(--red)!important;}
+.add-tc{width:215px;flex:0 0 215px;min-height:220px;border:1.5px dashed var(--border);border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--ink3);font-size:12px;font-family:'DM Mono',monospace;letter-spacing:.08em;transition:border-color .2s,color .2s,background .2s;}
+.add-tc:hover{border-color:var(--accent);color:var(--ink);background:var(--off);}
+.add-tc .plus{font-size:24px;color:var(--accent);}
+
+/* ALARMS */
+#alarm-sec{padding:40px 40px 64px;}
+.alarms-list{display:flex;flex-direction:column;gap:12px;}
+.ai{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .2s,box-shadow .2s;animation:fadeUp .3s ease both;}
+.ai.active{border-color:var(--accent2);}
+.ai.ringing{border-color:var(--red)!important;}
+@keyframes ringFlash{0%,100%{background:var(--white)}50%{background:#fce8e5}}
+.ai.ringing{animation:ringFlash .4s ease infinite;}
+
+/* Top row: time display + label + toggle + delete */
+.ai-top{display:flex;align-items:center;gap:12px;padding:18px 20px 14px;}
+
+/* Big H:M:S time display */
+.ai-time-display{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.ai-seg-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;}
+.ai-seg{font-family:'DM Mono',monospace;font-size:36px;font-weight:300;color:var(--ink);letter-spacing:-.03em;line-height:1;width:60px;text-align:center;border:none;background:transparent;outline:none;cursor:pointer;border-radius:8px;padding:3px 4px;transition:background .15s;-moz-appearance:textfield;}
+.ai-seg::-webkit-outer-spin-button,.ai-seg::-webkit-inner-spin-button{-webkit-appearance:none;}
+.ai-seg:hover{background:var(--off);}
+.ai-seg:focus{background:var(--off);outline:2px solid var(--accent);outline-offset:-2px;}
+.ai-seg-lbl{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;}
+/* Arrow overlay on hover for alarm segs */
+.ai-seg-arrows{position:absolute;right:-18px;top:50%;transform:translateY(-60%);display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s;pointer-events:none;z-index:5;}
+.ai-seg-wrap:hover .ai-seg-arrows{opacity:1;pointer-events:all;}
+.aa{width:16px;height:16px;border:none;background:var(--off);color:var(--ink3);font-size:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:background .12s,color .12s;border:1px solid var(--border);line-height:1;padding:0;}
+.aa:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+.ai-sep{font-family:'DM Mono',monospace;font-size:30px;font-weight:300;color:var(--accent);opacity:.5;line-height:1;margin-bottom:16px;flex-shrink:0;}
+
+/* Sound stop button */
+.sound-stop-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;border:1.5px solid var(--red);border-radius:30px;background:#fce8e5;color:var(--red);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;cursor:pointer;transition:background .15s,transform .1s;animation:pulse-red 1s ease infinite;}
+.sound-stop-btn:hover{background:#f5cdc8;transform:scale(1.03);}
+.sound-stop-btn:active{transform:scale(.97);}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(217,79,61,.3)}50%{box-shadow:0 0 0 6px rgba(217,79,61,.0)}}
+#sound-bar{display:none;align-items:center;justify-content:center;padding:12px 40px;background:#fff8f7;border-bottom:1px solid #fce8e5;gap:12px;}
+#sound-bar.visible{display:flex;}
+#sound-bar-msg{font-family:'DM Mono',monospace;font-size:11px;color:var(--red);letter-spacing:.08em;}
+
+/* Label */
+.ai-label{flex:1;border:none;background:transparent;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:600;color:var(--ink);outline:none;border-bottom:1.5px dashed transparent;padding-bottom:2px;transition:border-color .2s;min-width:0;}
+.ai-label::placeholder{color:var(--ink3);font-weight:400;}
+.ai-label:focus{border-bottom-color:var(--accent);}
+
+/* Toggle */
+.atog{position:relative;width:42px;height:22px;flex-shrink:0;}
+.atog input{opacity:0;width:0;height:0;}
+.tslider{position:absolute;inset:0;border-radius:11px;background:var(--border);cursor:pointer;transition:background .2s;}
+.tslider::before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+.atog input:checked~.tslider{background:var(--ink);}
+.atog input:checked~.tslider::before{transform:translateX(20px);}
+
+.ai-del{width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--ink3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;flex-shrink:0;}
+.ai-del:hover{background:#fce8e5;color:var(--red);}
+
+/* Bottom row: day chips */
+.ai-bottom{display:flex;align-items:center;gap:6px;padding:0 20px 16px;flex-wrap:wrap;}
+.ai-bottom-lbl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-family:'DM Mono',monospace;margin-right:4px;}
+.dc{width:26px;height:26px;border-radius:50%;border:1px solid var(--border);background:var(--white);font-size:8px;font-family:'DM Mono',monospace;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink3);transition:background .15s,border-color .15s,color .15s;flex-shrink:0;}
+.dc.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+/* Add button */
+.add-alarm-btn{display:flex;align-items:center;gap:10px;padding:14px 20px;border:1.5px dashed var(--border);border-radius:var(--r);cursor:pointer;color:var(--ink3);font-size:12px;font-family:'DM Mono',monospace;letter-spacing:.08em;transition:border-color .2s,color .2s,background .2s;background:transparent;width:100%;margin-top:4px;}
+.add-alarm-btn:hover{border-color:var(--accent);color:var(--ink);background:var(--off);}
+.add-alarm-btn .plus{font-size:20px;color:var(--accent);}
+
+
+@media(max-width:700px){
+  #alarm-sec,#timer-sec{padding-left:20px;padding-right:20px;}
+  #hero{padding:36px 20px 16px;}
+  #hero-add-wrap{padding:14px 20px 0;}
+  #city-clocks{padding:0 20px 28px;}
+  .cg{flex-wrap:wrap;gap:8px;justify-content:flex-start;padding:18px 0;}
+  .cg-loc{min-width:auto;font-size:15px;}
+  .cg-time{font-size:clamp(52px,13vw,90px);}
+  .cg-ampm{font-size:14px;}
+  .cg-meta{min-width:auto;}
+  .sep{margin:0 20px;}
+  .ai{flex-wrap:wrap;}
+  .ai-days{order:5;width:100%;}
+}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+</style>
+</head>
+<body>
+
+<!-- LEFT AD -->
+<div id="page-wrap">
+<div id="ad-left">
+  <div class="ad-slot-v">
+    <ins class="adsbygoogle"
+         style="display:block;width:160px;min-height:600px;"
+         data-ad-client="ca-pub-2726176435169276"
+         data-ad-slot="6337253809"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main-content">
+
+<div id="top-strip"><div class="ticker-track" id="tickerTrack"></div></div>
+<div id="sound-bar">
+  <span id="sound-bar-msg">⏰ alarm ringing</span>
+  <button class="sound-stop-btn" onclick="stopAllSound()">■ stop sound</button>
+</div>
+
+<section id="hero">
+  <div class="hlabel">your local time</div>
+  <div class="hloc" id="hloc">—</div>
+  <div>
+    <span id="ltime"><span id="lh">00</span><span class="col">:</span><span id="lm">00</span><span class="col">:</span><span id="ls">00</span></span>
+    <span id="lampm">AM</span>
+  </div>
+  <div id="ldate">—</div>
+  <div class="tzbadge" id="tzbadge">UTC</div>
+</section>
+
+<div id="hero-add-wrap">
+  <button class="hero-add-btn" id="openPicker"><span class="plus">+</span>add city clock</button>
+</div>
+
+<div id="city-clocks">
+  <div class="city-clocks-grid" id="cityGrid"></div>
+</div>
+
+<div class="modal-bg" id="pickerModal">
+  <div class="modal">
+    <div class="mhdr">
+      <span class="mtitle">select a city</span>
+      <button class="mclose" id="closePicker">✕</button>
+    </div>
+    <div class="msearch"><input type="text" id="citySearch" placeholder="Search city…" autocomplete="off"></div>
+    <div class="clist" id="cityListEl"></div>
+  </div>
+</div>
+
+
+<section id="timer-sec">
+  <div class="sec-head">
+    <span class="sec-title">timers</span>
+    <div class="sec-line"></div>
+  </div>
+  <div class="timers-row" id="timersRow"></div>
+</section>
+
+<div class="sep"></div>
+
+<section id="alarm-sec">
+  <div class="sec-head">
+    <span class="sec-title">alarms</span>
+    <div class="sec-line"></div>
+  </div>
+  <div class="alarms-list" id="alarmsList"></div>
+  <button class="add-alarm-btn" id="addAlarmBtn"><span class="plus">+</span>add alarm</button>
+</section>
+
+<!-- BOTTOM AD -->
+<div id="ad-bottom">
+  <div class="ad-slot-h">
+    <ins class="adsbygoogle"
+         style="display:block;width:160px;min-height:600px;"
+         data-ad-client="ca-pub-2726176435169276"
+         data-ad-slot="2324413642"
+         data-ad-format="auto"
+         data-full-width-responsive="false"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+</div>
+
+</div><!-- /main-content -->
+
+<!-- RIGHT AD -->
+<div id="ad-right">
+  <div class="ad-slot-v">
+    <ins class="adsbygoogle"
+         style="display:block;width:160px;min-height:600px;"
+         data-ad-client="ca-pub-2726176435169276"
+         data-ad-slot="8308811029"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+</div>
+</div><!-- /page-wrap -->
+
+<script>
+const ALL_CITIES=[
+  {name:'Tokyo',tz:'Asia/Tokyo',off:+9},{name:'Seoul',tz:'Asia/Seoul',off:+9},
+  {name:'Singapore',tz:'Asia/Singapore',off:+8},{name:'Beijing',tz:'Asia/Shanghai',off:+8},
+  {name:'Shanghai',tz:'Asia/Shanghai',off:+8},{name:'Hong Kong',tz:'Asia/Hong_Kong',off:+8},
+  {name:'Colombo',tz:'Asia/Colombo',off:+5.5},{name:'Mumbai',tz:'Asia/Kolkata',off:+5.5},
+  {name:'Delhi',tz:'Asia/Kolkata',off:+5.5},{name:'Karachi',tz:'Asia/Karachi',off:+5},
+  {name:'Dhaka',tz:'Asia/Dhaka',off:+6},{name:'Bangkok',tz:'Asia/Bangkok',off:+7},
+  {name:'Jakarta',tz:'Asia/Jakarta',off:+7},{name:'Dubai',tz:'Asia/Dubai',off:+4},
+  {name:'Abu Dhabi',tz:'Asia/Dubai',off:+4},{name:'Tehran',tz:'Asia/Tehran',off:+3.5},
+  {name:'Moscow',tz:'Europe/Moscow',off:+3},{name:'Riyadh',tz:'Asia/Riyadh',off:+3},
+  {name:'Nairobi',tz:'Africa/Nairobi',off:+3},{name:'Istanbul',tz:'Europe/Istanbul',off:+3},
+  {name:'Cairo',tz:'Africa/Cairo',off:+2},{name:'Johannesburg',tz:'Africa/Johannesburg',off:+2},
+  {name:'Helsinki',tz:'Europe/Helsinki',off:+2},{name:'Athens',tz:'Europe/Athens',off:+2},
+  {name:'Paris',tz:'Europe/Paris',off:+1},{name:'Berlin',tz:'Europe/Berlin',off:+1},
+  {name:'Rome',tz:'Europe/Rome',off:+1},{name:'Madrid',tz:'Europe/Madrid',off:+1},
+  {name:'Lagos',tz:'Africa/Lagos',off:+1},{name:'London',tz:'Europe/London',off:0},
+  {name:'Lisbon',tz:'Europe/Lisbon',off:0},{name:'Accra',tz:'Africa/Accra',off:0},
+  {name:'São Paulo',tz:'America/Sao_Paulo',off:-3},{name:'Buenos Aires',tz:'America/Argentina/Buenos_Aires',off:-3},
+  {name:'New York',tz:'America/New_York',off:-5},{name:'Toronto',tz:'America/Toronto',off:-5},
+  {name:'Bogotá',tz:'America/Bogota',off:-5},{name:'Lima',tz:'America/Lima',off:-5},
+  {name:'Chicago',tz:'America/Chicago',off:-6},{name:'Mexico City',tz:'America/Mexico_City',off:-6},
+  {name:'Denver',tz:'America/Denver',off:-7},{name:'Los Angeles',tz:'America/Los_Angeles',off:-8},
+  {name:'Vancouver',tz:'America/Vancouver',off:-8},{name:'Anchorage',tz:'America/Anchorage',off:-9},
+  {name:'Honolulu',tz:'Pacific/Honolulu',off:-10},{name:'Auckland',tz:'Pacific/Auckland',off:+12},
+  {name:'Sydney',tz:'Australia/Sydney',off:+10},{name:'Melbourne',tz:'Australia/Melbourne',off:+10},
+];
+
+
+
+function getT(tz){
+  const now=new Date();
+  try{
+    const p=now.toLocaleString('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).match(/(\d+):(\d+):(\d+)\s*(AM|PM)/i);
+    const d=now.toLocaleString('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric'});
+    if(!p)return null;
+    const h24=p[4]==='AM'?(parseInt(p[1])%12):(parseInt(p[1])%12+12);
+    return{h:p[1].padStart(2,'0'),m:p[2],s:p[3],ap:p[4],date:d,h24};
+  }catch(e){return null;}
+}
+function offStr(o){if(o===0)return'UTC±0';const s=o>0?'+':'-';const h=Math.floor(Math.abs(o));const m=(Math.abs(o)%1)*60;return`UTC${s}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;}
+function dp(h){return h>=6&&h<18?'day':h>=18&&h<20?'dusk':'night';}
+
+// LOCAL
+function updateLocal(){
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+  const t=getT(tz);if(!t)return;
+  document.getElementById('lh').textContent=t.h;
+  document.getElementById('lm').textContent=t.m;
+  document.getElementById('ls').textContent=t.s;
+  document.getElementById('lampm').textContent=t.ap;
+  document.getElementById('ldate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('hloc').textContent=tz.split('/').pop().replace(/_/g,' ');
+  const off=-new Date().getTimezoneOffset()/60;
+  document.getElementById('tzbadge').textContent=tz+' · '+offStr(off);
+}
+
+
+
+let cityClocks=[];
+
+// CITY CLOCKS GRID — same size as main clock
+function buildCityGrid(){
+  const grid=document.getElementById('cityGrid');
+  grid.innerHTML='';
+  cityClocks.forEach((city,i)=>{
+    const row=document.createElement('div');
+    row.className='cg';row.id='cg'+i;row.style.animationDelay=(i*.06)+'s';
+    row.innerHTML=`
+      <div class="cg-loc">${city.name}</div>
+      <div class="cg-time-wrap">
+        <div class="cg-time"><span class="cgh">--</span><span class="col">:</span><span class="cgm">--</span><span class="col">:</span><span class="cgs">--</span></div>
+        <span class="cg-ampm cgap"></span>
+      </div>
+      <div class="cg-meta">
+        <div class="cg-date cgd">—</div>
+        <div class="cg-off">${offStr(city.off)}</div>
+      </div>
+      <button class="cg-del" onclick="rmCity(${i})" title="Remove">✕</button>`;
+    grid.appendChild(row);
+  });
+  updateCityClocks();
+}
+function updateCityClocks(){
+  cityClocks.forEach((city,i)=>{
+    const t=getT(city.tz);if(!t)return;
+    const row=document.getElementById('cg'+i);if(!row)return;
+    row.querySelector('.cgh').textContent=t.h;
+    row.querySelector('.cgm').textContent=t.m;
+    row.querySelector('.cgs').textContent=t.s;
+    row.querySelector('.cgap').textContent=' '+t.ap;
+    row.querySelector('.cgd').innerHTML=`<span class="di ${dp(t.h24)}"></span>${t.date}`;
+  });
+}
+function rmCity(i){cityClocks.splice(i,1);buildCityGrid();}
+
+// TICKER
+function buildTicker(){
+  const track=document.getElementById('tickerTrack');
+  track.innerHTML='';
+  for(let p=0;p<2;p++){
+    ALL_CITIES.slice(0,24).forEach(city=>{
+      const t=getT(city.tz);if(!t)return;
+      const el=document.createElement('div');
+      el.className='ti';el.dataset.tz=city.tz;
+      el.innerHTML=`<span class="cn">${city.name}</span><span class="ct">${t.h}:${t.m} ${t.ap}</span><span class="tdot"></span>`;
+      track.appendChild(el);
+    });
+  }
+}
+function updateTicker(){
+  document.querySelectorAll('.ti').forEach(el=>{
+    const t=getT(el.dataset.tz);if(!t)return;
+    el.querySelector('.ct').textContent=`${t.h}:${t.m} ${t.ap}`;
+  });
+}
+
+// PICKER
+const pickerModal=document.getElementById('pickerModal');
+document.getElementById('openPicker').addEventListener('click',()=>{
+  if(cityClocks.length>=10){showToast('Max 10 clocks reached!');return;}
+  renderCityList('');pickerModal.classList.add('open');
+  setTimeout(()=>document.getElementById('citySearch').focus(),120);
+});
+document.getElementById('closePicker').addEventListener('click',()=>pickerModal.classList.remove('open'));
+pickerModal.addEventListener('click',e=>{if(e.target===pickerModal)pickerModal.classList.remove('open');});
+document.getElementById('citySearch').addEventListener('input',e=>renderCityList(e.target.value));
+function renderCityList(q){
+  const el=document.getElementById('cityListEl');
+  const flt=q?ALL_CITIES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())):ALL_CITIES;
+  el.innerHTML='';
+  flt.forEach(city=>{
+    const isA=cityClocks.some(c=>c.name===city.name);
+    const d=document.createElement('div');
+    d.className='cli'+(isA?' active':'');
+    d.innerHTML=`<span class="cli-n">${city.name}</span><span class="cli-z">${offStr(city.off)}</span><span class="cli-ck">✓</span>`;
+    d.addEventListener('click',()=>{
+      if(isA){cityClocks=cityClocks.filter(c=>c.name!==city.name);}
+      else{if(cityClocks.length>=10){showToast('Max 10 clocks!');return;}cityClocks.push(city);}
+      buildCityGrid();renderCityList(document.getElementById('citySearch').value);
+    });
+    el.appendChild(d);
+  });
+}
+
+// TOAST
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:10px 22px;border-radius:30px;font-family:DM Mono,monospace;font-size:12px;letter-spacing:.08em;z-index:999;transition:opacity .3s;white-space:nowrap;';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',2200);
+}
+
+// TIMERS
+const TCOLS=['#c8a96e','#3d9a6e','#3d6e9a','#d94f3d','#9a3d7a','#3d7a9a','#7a9a3d','#9a7a3d','#6e3d9a','#3d9a9a'];
+const TNAMES=['Focus','Break','Meeting','Workout','Cook','Study','Nap','Read','Call','Other'];
+let timers=[];let tidC=0;
+
+function addTimer(){
+  if(timers.length>=10){showToast('Max 10 timers!');return;}
+  const id=tidC++;const i=timers.length;
+  timers.push({id,name:TNAMES[i%TNAMES.length],total:0,remaining:0,running:false,alarming:false,interval:null,alarmRpt:null,color:TCOLS[i%TCOLS.length]});
+  renderTimers();
+}
+function renderTimers(){
+  const row=document.getElementById('timersRow');row.innerHTML='';
+  timers.forEach((t,i)=>{
+    const R=49,ci=2*Math.PI*R;
+    const c=document.createElement('div');c.className='tc';c.id='tc'+t.id;c.style.animationDelay=(i*.06)+'s';
+    c.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.1em;color:var(--ink3)">Timer ${i+1}</span>
+        <button onclick="rmTimer(${t.id})" style="width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--ink3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='#fce8e5';this.style.color='#d94f3d'" onmouseout="this.style.background='transparent';this.style.color='var(--ink3)'">✕</button>
+      </div>
+      <input class="tn-input" value="${t.name}" id="tn${t.id}" />
+      <div class="tdisp">
+        <svg class="tsvg" viewBox="0 0 118 118">
+          <circle class="ttrack" cx="59" cy="59" r="${R}"/>
+          <circle class="tprog" cx="59" cy="59" r="${R}" stroke="${t.color}" stroke-dasharray="${ci}" stroke-dashoffset="${ci}" id="tp${t.id}"/>
+        </svg>
+        <div class="tcenter"><div class="tdigits" id="td${t.id}">00:00:00</div><div class="tstatus" id="ts${t.id}">ready</div></div>
+      </div>
+      <div class="tinputs">
+        <div class="tiwrap"><label>HH</label><input type="number" min="0" max="23" value="0" id="th${t.id}"><div class="num-arrows"><button class="na" onclick="nudge('th${t.id}',1,23)">▲</button><button class="na" onclick="nudge('th${t.id}',-1,23)">▼</button></div></div>
+        <div class="tiwrap"><label>MM</label><input type="number" min="0" max="59" value="5" id="tm${t.id}"><div class="num-arrows"><button class="na" onclick="nudge('tm${t.id}',1,59)">▲</button><button class="na" onclick="nudge('tm${t.id}',-1,59)">▼</button></div></div>
+        <div class="tiwrap"><label>SS</label><input type="number" min="0" max="59" value="0" id="ts2${t.id}"><div class="num-arrows"><button class="na" onclick="nudge('ts2${t.id}',1,59)">▲</button><button class="na" onclick="nudge('ts2${t.id}',-1,59)">▼</button></div></div>
+      </div>
+      <div class="presets">
+        <span class="pb" onclick="setP(${t.id},0,0,30)">30s</span>
+        <span class="pb" onclick="setP(${t.id},0,1,0)">1m</span>
+        <span class="pb" onclick="setP(${t.id},0,5,0)">5m</span>
+        <span class="pb" onclick="setP(${t.id},0,10,0)">10m</span>
+        <span class="pb" onclick="setP(${t.id},0,15,0)">15m</span>
+        <span class="pb" onclick="setP(${t.id},0,25,0)">25m</span>
+        <span class="pb" onclick="setP(${t.id},0,30,0)">30m</span>
+        <span class="pb" onclick="setP(${t.id},1,0,0)">1h</span>
+      </div>
+      <div class="tbrow">
+        <button class="btn btn-s" id="tb${t.id}" onclick="tStart(${t.id})">Start</button>
+        <button class="btn btn-r" onclick="tReset(${t.id})">Reset</button>
+      </div>`;
+    row.appendChild(c);
+  });
+  if(timers.length<10){
+    const a=document.createElement('div');a.className='add-tc';
+    a.innerHTML='<span class="plus">+</span><span>add timer</span>';
+    a.addEventListener('click',addTimer);row.appendChild(a);
+  }
+  timers.forEach(t=>updateTUI(t.id));
+}
+function rmTimer(id){
+  const t=timers.find(t=>t.id===id);
+  if(t){clearInterval(t.interval);clearInterval(t.alarmRpt);}
+  timers=timers.filter(t=>t.id!==id);renderTimers();
+}
+function fmt(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;}
+function updateTUI(id){
+  const t=timers.find(t=>t.id===id);if(!t)return;
+  const R=49,ci=2*Math.PI*R;
+  const pr=document.getElementById('tp'+id),dig=document.getElementById('td'+id),st=document.getElementById('ts'+id);
+  if(!dig)return;
+  dig.textContent=fmt(t.remaining);
+  if(pr)pr.style.strokeDashoffset=ci*(1-(t.total>0?(1-t.remaining/t.total):0));
+  if(t.alarming){st.textContent='⏰ done!';st.style.color='#d94f3d';}
+  else if(t.running){st.textContent='running';st.style.color='#3d9a6e';}
+  else if(t.remaining>0&&t.remaining<t.total){st.textContent='paused';st.style.color='#c8a96e';}
+  else{st.textContent='ready';st.style.color='#8a8a82';}
+}
+function tStart(id){
+  const t=timers.find(t=>t.id===id);if(!t)return;
+  const btn=document.getElementById('tb'+id),card=document.getElementById('tc'+id);
+  if(t.alarming){t.alarming=false;card.classList.remove('alarming');clearInterval(t.alarmRpt);tReset(id);return;}
+  if(t.running){clearInterval(t.interval);t.running=false;if(btn){btn.textContent='Resume';btn.className='btn btn-p';}updateTUI(id);return;}
+  if(!t.running&&t.remaining===0){
+    const h=parseInt(document.getElementById('th'+id).value)||0;
+    const m=parseInt(document.getElementById('tm'+id).value)||0;
+    const s=parseInt(document.getElementById('ts2'+id).value)||0;
+    const tot=h*3600+m*60+s;
+    if(tot<=0){card.style.animation='shake .3s ease';setTimeout(()=>card.style.animation='',400);return;}
+    t.total=tot;t.remaining=tot;
+  }
+  t.running=true;if(btn){btn.textContent='Pause';btn.className='btn btn-run';}
+  t.interval=setInterval(()=>{
+    if(t.remaining<=0){
+      clearInterval(t.interval);t.running=false;t.alarming=true;
+      card.classList.add('alarming');
+      if(btn){btn.textContent='Dismiss';btn.className='btn btn-d';}
+      playBeep();
+      updateTUI(id);return;
+    }
+    t.remaining--;updateTUI(id);
+  },1000);
+  updateTUI(id);
+}
+function tReset(id){
+  const t=timers.find(t=>t.id===id);if(!t)return;
+  clearInterval(t.interval);clearInterval(t.alarmRpt);
+  t.running=false;t.alarming=false;t.remaining=0;t.total=0;
+  const btn=document.getElementById('tb'+id),card=document.getElementById('tc'+id);
+  if(btn){btn.textContent='Start';btn.className='btn btn-s';}
+  if(card)card.classList.remove('alarming');
+  updateTUI(id);
+}
+function setP(id,h,m,s){
+  document.getElementById('th'+id).value=h;
+  document.getElementById('tm'+id).value=m;
+  document.getElementById('ts2'+id).value=s;
+  tReset(id);
+}
+
+// ALARMS
+let alarms=[];let aidC=0;
+const DAYS=['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+function addAlarm(){
+  const id=aidC++;const now=new Date();
+  alarms.push({
+    id,
+    h:String(now.getHours()).padStart(2,'0'),
+    m:String(now.getMinutes()).padStart(2,'0'),
+    s:'00',
+    label:'Alarm',days:[],on:false,ringing:false
+  });
+  renderAlarms();
+}
+
+function rmAlarm(id){alarms=alarms.filter(a=>a.id!==id);renderAlarms();}
+
+function renderAlarms(){
+  const list=document.getElementById('alarmsList');list.innerHTML='';
+  alarms.forEach((alarm,i)=>{
+    const d=document.createElement('div');
+    d.className='ai'+(alarm.on?' active':'')+(alarm.ringing?' ringing':'');
+    d.id='ai'+alarm.id;d.style.animationDelay=(i*.05)+'s';
+    d.innerHTML=`
+      <div class="ai-top">
+        <div class="ai-time-display">
+          <div class="ai-seg-wrap">
+            <input class="ai-seg" type="number" min="0" max="23" value="${alarm.h}" id="aih${alarm.id}"
+              onchange="updASeg(${alarm.id},'h',this.value)"
+              onfocus="this.select()" />
+            <div class="ai-seg-arrows"><button class="aa" onclick="nudgeASeg(${alarm.id},'h',1)">▲</button><button class="aa" onclick="nudgeASeg(${alarm.id},'h',-1)">▼</button></div>
+            <span class="ai-seg-lbl">hour</span>
+          </div>
+          <span class="ai-sep">:</span>
+          <div class="ai-seg-wrap">
+            <input class="ai-seg" type="number" min="0" max="59" value="${alarm.m}" id="aim${alarm.id}"
+              onchange="updASeg(${alarm.id},'m',this.value)"
+              onfocus="this.select()" />
+            <div class="ai-seg-arrows"><button class="aa" onclick="nudgeASeg(${alarm.id},'m',1)">▲</button><button class="aa" onclick="nudgeASeg(${alarm.id},'m',-1)">▼</button></div>
+            <span class="ai-seg-lbl">min</span>
+          </div>
+          <span class="ai-sep">:</span>
+          <div class="ai-seg-wrap">
+            <input class="ai-seg" type="number" min="0" max="59" value="${alarm.s}" id="ais${alarm.id}"
+              onchange="updASeg(${alarm.id},'s',this.value)"
+              onfocus="this.select()" />
+            <div class="ai-seg-arrows"><button class="aa" onclick="nudgeASeg(${alarm.id},'s',1)">▲</button><button class="aa" onclick="nudgeASeg(${alarm.id},'s',-1)">▼</button></div>
+            <span class="ai-seg-lbl">sec</span>
+          </div>
+        </div>
+        <input class="ai-label" value="${alarm.label}" placeholder="Label…"
+          onchange="updAL(${alarm.id},this.value)" />
+        <label class="atog">
+          <input type="checkbox" ${alarm.on?'checked':''} onchange="togAlarm(${alarm.id},this.checked)"/>
+          <span class="tslider"></span>
+        </label>
+        <button class="ai-del" onclick="rmAlarm(${alarm.id})">✕</button>
+      </div>
+      <div class="ai-bottom">
+        <span class="ai-bottom-lbl">repeat</span>
+        ${DAYS.map((day,j)=>`<div class="dc${alarm.days.includes(j)?' on':''}" onclick="togDay(${alarm.id},${j})">${day}</div>`).join('')}
+      </div>`;
+    list.appendChild(d);
+  });
+}
+
+function updASeg(id,seg,val){
+  const a=alarms.find(a=>a.id===id);if(!a)return;
+  const max=seg==='h'?23:59;
+  let n=parseInt(val)||0;
+  n=Math.max(0,Math.min(max,n));
+  a[seg]=String(n).padStart(2,'0');
+  // Update input display
+  const el=document.getElementById('ai'+seg+id);
+  if(el)el.value=a[seg];
+}
+function updAL(id,v){const a=alarms.find(a=>a.id===id);if(a)a.label=v;}
+function togDay(id,day){
+  const a=alarms.find(a=>a.id===id);if(!a)return;
+  const idx=a.days.indexOf(day);idx>=0?a.days.splice(idx,1):a.days.push(day);
+  renderAlarms();
+}
+function togAlarm(id,on){const a=alarms.find(a=>a.id===id);if(a){a.on=on;a.ringing=false;}renderAlarms();}
+
+function checkAlarms(){
+  const now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0');
+  const mm=String(now.getMinutes()).padStart(2,'0');
+  const ss=String(now.getSeconds()).padStart(2,'0');
+  const cd=now.getDay();
+  alarms.forEach(alarm=>{
+    if(!alarm.on||alarm.ringing)return;
+    if(alarm.h!==hh||alarm.m!==mm||alarm.s!==ss)return;
+    if(alarm.days.length>0&&!alarm.days.includes(cd))return;
+    alarm.ringing=true;renderAlarms();playAlarmSound();
+  });
+}
+document.getElementById('addAlarmBtn').addEventListener('click',addAlarm);
+
+// NUDGE helpers for timer/alarm inputs
+function nudge(inputId,dir,max){
+  const el=document.getElementById(inputId);if(!el)return;
+  let v=parseInt(el.value)||0;
+  v=Math.max(0,Math.min(max,v+dir));
+  el.value=v;el.dispatchEvent(new Event('change'));
+}
+function nudgeASeg(id,seg,dir){
+  const a=alarms.find(a=>a.id===id);if(!a)return;
+  const max=seg==='h'?23:59;
+  let v=parseInt(a[seg])||0;
+  v=Math.max(0,Math.min(max,v+dir));
+  a[seg]=String(v).padStart(2,'0');
+  const el=document.getElementById('ai'+seg+id);
+  if(el)el.value=a[seg];
+}
+
+// AUDIO — continuous loop until stopped
+let actx;
+let soundNodes=[];
+let soundInterval=null;
+let soundActive=false;
+
+function getAC(){
+  if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+  if(actx.state==='suspended')actx.resume();
+  return actx;
+}
+
+function beepOnce(freq1,freq2,vol){
+  const ctx=getAC();
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.frequency.setValueAtTime(freq1,ctx.currentTime);
+  if(freq2)o.frequency.setValueAtTime(freq2,ctx.currentTime+.12);
+  g.gain.setValueAtTime(vol||.35,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.28);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+.3);
+  soundNodes.push(o);
+}
+
+function playBeep(){
+  // Timer done — 3 quick beeps, repeating
+  if(!soundActive){
+    soundActive=true;
+    showSoundBar('⏰ timer done!');
+  }
+  [0,.28,.56].forEach(d=>{
+    setTimeout(()=>beepOnce(880,660,.38),d*1000);
+  });
+}
+
+function playAlarmSound(){
+  if(!soundActive){
+    soundActive=true;
+    showSoundBar('⏰ alarm ringing');
+  }
+  // Rising alarm tones
+  const tones=[523,587,659,523,587,659,784,659];
+  tones.forEach((f,i)=>{
+    setTimeout(()=>beepOnce(f,null,.22),i*180);
+  });
+}
+
+function showSoundBar(msg){
+  document.getElementById('sound-bar-msg').textContent=msg;
+  document.getElementById('sound-bar').classList.add('visible');
+  // Keep repeating alarm sound every 2.5s
+  clearInterval(soundInterval);
+  soundInterval=setInterval(()=>{
+    if(!soundActive){clearInterval(soundInterval);return;}
+    // Continuous alarm
+    const tones=[659,784,659,784];
+    tones.forEach((f,i)=>setTimeout(()=>beepOnce(f,null,.18),i*200));
+  },2500);
+}
+
+function stopAllSound(){
+  soundActive=false;
+  clearInterval(soundInterval);
+  soundNodes.forEach(n=>{try{n.stop();}catch(e){}});
+  soundNodes=[];
+  document.getElementById('sound-bar').classList.remove('visible');
+  // Dismiss all alarming timers
+  timers.forEach(t=>{
+    if(t.alarming){
+      t.alarming=false;
+      clearInterval(t.alarmRpt);
+      const card=document.getElementById('tc'+t.id);
+      const btn=document.getElementById('tb'+t.id);
+      if(card)card.classList.remove('alarming');
+      if(btn){btn.textContent='Start';btn.className='btn btn-s';}
+      updateTUI(t.id);
+    }
+  });
+  // Dismiss all ringing alarms
+  alarms.forEach(a=>{if(a.ringing){a.ringing=false;}});
+  renderAlarms();
+}
+
+document.addEventListener('click',()=>getAC(),{once:true});
+
+// INIT
+buildCityGrid();buildTicker();
+addTimer();addTimer();addTimer();
+addAlarm();
+let lastS=0;
+function loop(){
+  const n=Date.now();
+  if(n-lastS>=1000){lastS=n;updateLocal();updateCityClocks();checkAlarms();}
+  requestAnimationFrame(loop);
+}
+loop();
+setInterval(updateTicker,30000);
+</script>
+</body>
+</html>
