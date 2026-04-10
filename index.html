@@ -683,7 +683,7 @@ function addAlarm(){
     h:String(now.getHours()).padStart(2,'0'),
     m:String(now.getMinutes()).padStart(2,'0'),
     s:'00',
-    label:'Alarm',days:[],on:false,ringing:false
+    label:'Alarm',days:[0,1,2,3,4,5,6],on:false,ringing:false
   });
   renderAlarms();
 }
