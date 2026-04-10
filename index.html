@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Bricolage+Grotesque:wght@300;400;600&display=swap" rel="stylesheet">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2726176435169276" crossorigin="anonymous"></script>
 <style>
-:root{--white:#fff;--off:#fafaf8;--ink:#1a1a18;--ink2:#3d3d38;--ink3:#8a8a82;--accent:#c8a96e;--accent2:#e8d5aa;--red:#d94f3d;--green:#3d9a6e;--blue:#3d6e9a;--border:#e8e8e2;--r:16px;--r-sm:10px;}
+:root{--white:#f4f3f0;--off:#eeece8;--ink:#1a1a18;--ink2:#3d3d38;--ink3:#8a8a82;--accent:#c8a96e;--accent2:#e8d5aa;--red:#d94f3d;--green:#3d9a6e;--blue:#3d6e9a;--border:#dedad4;--r:16px;--r-sm:10px;}
 body.dark{--white:#0f0f0f;--off:#181818;--ink:#f0ede8;--ink2:#c8c4bc;--ink3:#6a6a62;--accent:#c8a96e;--accent2:#3a2e1a;--red:#e8614f;--green:#4ab07e;--blue:#5a8ab8;--border:#2a2a28;}
 body.dark #top-strip{background:#050505;}
 body.dark #top-strip::before{background:linear-gradient(90deg,#050505,transparent);}
@@ -876,10 +876,10 @@ function updateDMUI(isDark){
 }
 (function(){
   const saved=localStorage.getItem('dm');
-  const isDark=saved===null?true:saved==='1';
+  const isDark=saved===null?false:saved==='1';
   if(isDark){document.body.classList.add('dark');}
   updateDMUI(isDark);
-  if(saved===null)localStorage.setItem('dm','1');
+  if(saved===null)localStorage.setItem('dm','0');
 })();
 </script>
 </body>
