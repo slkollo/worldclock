@@ -30,6 +30,10 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Bricolage+Grotesque:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2726176435169276" crossorigin="anonymous"></script>
 
+<!-- D3.js for real world map rendering -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+
 <style>
 :root{--white:#f4f3f0;--off:#eeece8;--ink:#1a1a18;--ink2:#3d3d38;--ink3:#8a8a82;--accent:#c8a96e;--accent2:#e8d5aa;--red:#d94f3d;--green:#3d9a6e;--blue:#3d6e9a;--border:#dedad4;--r:16px;--r-sm:10px;}
 
@@ -299,6 +303,103 @@ body{background:var(--white);color:var(--ink);font-family:'Bricolage Grotesque',
 .inline-ad-wrap{margin:40px 0;display:flex;justify-content:center;padding:16px;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);}
 .inline-ad-wrap .adlabel{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;text-align:center;display:block;}
 
+/* FULLSCREEN ICON on hero */
+#fs-btn{position:absolute;top:16px;left:16px;width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);color:var(--ink3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s,color .2s,transform .2s;z-index:10;}
+#fs-btn:hover{background:var(--accent2);border-color:var(--accent);color:var(--ink);transform:scale(1.06);}
+#fs-btn svg{width:16px;height:16px;}
+
+/* FULLSCREEN CLOCK OVERLAY */
+#fs-overlay{position:fixed;inset:0;background:var(--ink);color:var(--off);z-index:9999;display:none;align-items:center;justify-content:center;flex-direction:column;animation:fsFadeIn .4s ease;}
+#fs-overlay.active{display:flex;}
+@keyframes fsFadeIn{from{opacity:0}to{opacity:1}}
+body.fs-open{overflow:hidden;}
+body.dark #fs-overlay{background:#0a0a0a;}
+
+#fs-overlay::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(200,169,110,.08) 0%,transparent 70%);pointer-events:none;}
+
+#fs-close{position:absolute;top:28px;right:32px;width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(200,169,110,.3);background:transparent;color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,transform .2s;z-index:2;}
+#fs-close:hover{background:rgba(200,169,110,.15);transform:rotate(90deg);}
+#fs-close svg{width:22px;height:22px;}
+
+.fs-wrap{text-align:center;position:relative;z-index:1;padding:20px;max-width:100%;}
+.fs-label{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin-bottom:20px;opacity:.7;}
+.fs-loc{font-family:'DM Serif Display',serif;font-style:italic;font-size:clamp(22px,3vw,32px);color:rgba(244,243,240,.7);margin-bottom:20px;}
+.fs-time{font-family:'DM Mono',monospace;font-weight:200;letter-spacing:-.05em;font-size:clamp(120px,22vw,360px);line-height:.9;color:#fff;display:inline-block;}
+.fs-time .col{color:var(--accent);animation:blink .9s step-end infinite;}
+.fs-ampm{font-family:'DM Mono',monospace;font-size:clamp(28px,4vw,56px);color:var(--accent);letter-spacing:.1em;margin-left:14px;vertical-align:super;}
+.fs-date{font-family:'DM Mono',monospace;font-size:clamp(14px,1.5vw,20px);color:rgba(244,243,240,.55);margin-top:28px;letter-spacing:.12em;}
+.fs-tz{font-family:'DM Mono',monospace;font-size:11px;color:rgba(232,213,170,.6);background:rgba(200,169,110,.1);padding:6px 16px;border-radius:30px;margin-top:14px;display:inline-block;letter-spacing:.15em;}
+.fs-seconds{display:inline-block;color:var(--accent);opacity:.6;}
+
+/* ESC hint */
+.fs-hint{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:10px;color:rgba(244,243,240,.35);letter-spacing:.2em;text-transform:uppercase;}
+.fs-hint kbd{background:rgba(200,169,110,.15);color:var(--accent);padding:3px 8px;border-radius:4px;border:1px solid rgba(200,169,110,.2);font-family:inherit;font-size:9px;}
+
+@media(max-width:700px){
+  #fs-btn{top:10px;left:10px;width:32px;height:32px;}
+  #fs-close{top:18px;right:18px;width:40px;height:40px;}
+  .fs-wrap{padding:16px;}
+  .fs-hint{bottom:18px;font-size:9px;}
+}
+
+/* ====== WORLD MAP SECTION ====== */
+#world-map-section{padding:60px 40px;background:var(--ink);color:var(--off);border-top:1px solid var(--border);position:relative;overflow:hidden;}
+#world-map-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(200,169,110,.08) 0%,transparent 60%);pointer-events:none;}
+.map-wrap{max-width:1200px;margin:0 auto;position:relative;z-index:1;}
+.map-eyebrow{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;text-align:center;}
+.map-title{font-family:'DM Serif Display',serif;font-size:clamp(32px,5vw,48px);font-weight:400;color:#fff;line-height:1.1;text-align:center;margin-bottom:16px;letter-spacing:-.02em;}
+.map-title em{font-style:italic;color:var(--accent);}
+.map-subtitle{font-family:'Bricolage Grotesque',sans-serif;font-size:16px;color:rgba(244,243,240,.65);text-align:center;margin-bottom:36px;max-width:620px;margin-left:auto;margin-right:auto;line-height:1.6;}
+.map-container{position:relative;width:100%;max-width:1100px;margin:0 auto;background:rgba(255,255,255,.02);border:1px solid rgba(200,169,110,.15);border-radius:20px;padding:24px;}
+.world-svg{width:100%;height:auto;display:block;}
+
+/* Country paths */
+.country{fill:rgba(200,169,110,.15);stroke:rgba(200,169,110,.35);stroke-width:.5;transition:fill .25s ease,stroke .25s ease;cursor:pointer;}
+.country:hover{fill:var(--accent);stroke:#fff;stroke-width:.8;}
+.country.active{fill:var(--accent);stroke:#fff;stroke-width:1;}
+
+/* City dots */
+.city-dot{fill:rgba(232,213,170,.55);stroke:#1a1a18;stroke-width:.5;cursor:pointer;transition:r .2s ease,fill .2s ease;}
+.city-dot:hover{fill:#fff;stroke:var(--accent);stroke-width:1;}
+.city-dot.capital{fill:#e8d5aa;stroke:#1a1a18;stroke-width:.8;}
+.city-dot.capital:hover{fill:#fff;}
+.city-label{fill:rgba(232,213,170,.5);font-family:'DM Mono',monospace;font-size:7px;pointer-events:none;text-anchor:middle;opacity:0;transition:opacity .2s;}
+.city-dot:hover + .city-label,.city-label.show{opacity:1;}
+
+/* Timezone lines (meridian lines) */
+.tz-line{stroke:rgba(200,169,110,.08);stroke-width:.3;stroke-dasharray:2 3;fill:none;}
+
+/* Tooltip */
+.map-tooltip{position:absolute;background:rgba(15,15,15,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--accent);border-radius:12px;padding:14px 18px;pointer-events:none;opacity:0;transform:translate(-50%,-100%) translateY(-14px);transition:opacity .2s ease;min-width:180px;box-shadow:0 10px 40px rgba(0,0,0,.5);z-index:100;}
+.map-tooltip.visible{opacity:1;}
+.map-tooltip::after{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:14px;height:14px;background:rgba(15,15,15,.96);border-right:1px solid var(--accent);border-bottom:1px solid var(--accent);transform:translateX(-50%) rotate(45deg);}
+.tt-city{font-family:'DM Serif Display',serif;font-size:16px;color:#fff;font-style:italic;margin-bottom:4px;}
+.tt-time{font-family:'DM Mono',monospace;font-size:22px;color:var(--accent);letter-spacing:-.02em;font-weight:300;line-height:1;margin-bottom:2px;}
+.tt-ampm{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.1em;margin-left:3px;}
+.tt-meta{font-family:'DM Mono',monospace;font-size:10px;color:rgba(244,243,240,.55);letter-spacing:.08em;margin-top:6px;}
+.tt-off{background:rgba(200,169,110,.15);padding:2px 7px;border-radius:10px;display:inline-block;font-size:9px;color:var(--accent);margin-top:4px;}
+
+/* Live clock strip below map */
+.map-strip{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:28px;padding:18px 20px;background:rgba(255,255,255,.03);border:1px solid rgba(200,169,110,.1);border-radius:14px;}
+.map-strip-item{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(0,0,0,.25);border-radius:20px;cursor:pointer;transition:background .15s,transform .15s;}
+.map-strip-item:hover{background:rgba(200,169,110,.15);transform:translateY(-1px);}
+.map-strip-city{font-family:'DM Mono',monospace;font-size:10px;color:rgba(244,243,240,.55);letter-spacing:.1em;text-transform:uppercase;}
+.map-strip-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);font-weight:500;}
+
+/* Map legend */
+.map-legend{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:10px;color:rgba(244,243,240,.45);letter-spacing:.08em;}
+.map-legend-item{display:flex;align-items:center;gap:6px;}
+.legend-swatch{width:10px;height:10px;border-radius:2px;}
+
+@media(max-width:700px){
+  #world-map-section{padding:40px 20px;}
+  .map-container{padding:14px;}
+  .city-label{font-size:10px;}
+  .map-tooltip{padding:10px 14px;min-width:140px;}
+  .tt-city{font-size:14px;}
+  .tt-time{font-size:18px;}
+}
+
 /* FOOTER */
 #site-footer{background:var(--ink);color:var(--off);padding:56px 40px 28px;}
 .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px;max-width:1100px;margin:0 auto 36px;}
@@ -373,6 +474,16 @@ body{background:var(--white);color:var(--ink);font-family:'Bricolage Grotesque',
 </div>
 
 <section id="hero">
+  <!-- Fullscreen button -->
+  <button id="fs-btn" onclick="openFullscreen()" title="View fullscreen clock" aria-label="Open fullscreen clock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7V3h4"/>
+      <path d="M21 7V3h-4"/>
+      <path d="M3 17v4h4"/>
+      <path d="M21 17v4h-4"/>
+    </svg>
+  </button>
+
   <div id="dm-wrap">
     <div id="dm-icons">
       <span class="dm-ic active" id="ic-sun">☀️</span>
@@ -395,6 +506,93 @@ body{background:var(--white);color:var(--ink);font-family:'Bricolage Grotesque',
   </div>
   <div id="ldate">—</div>
   <div class="tzbadge" id="tzbadge">UTC</div>
+</section>
+
+<!-- ========== INTERACTIVE WORLD MAP (below main time) ========== -->
+<section id="world-map-section">
+  <div class="map-wrap">
+    <div class="map-eyebrow">interactive map</div>
+    <h2 class="map-title">The World, <em>Right Now</em></h2>
+    <p class="map-subtitle">Hover over any city to see its current time. The map shows live, synchronized clocks for 100+ capital cities across every populated time zone.</p>
+
+    <div class="map-container">
+      <svg class="world-svg" viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" id="worldSvg">
+        <!-- Timezone meridian lines (every 15°) -->
+        <g id="tzLines">
+          <line class="tz-line" x1="83" y1="0" x2="83" y2="500"/>
+          <line class="tz-line" x1="125" y1="0" x2="125" y2="500"/>
+          <line class="tz-line" x1="167" y1="0" x2="167" y2="500"/>
+          <line class="tz-line" x1="208" y1="0" x2="208" y2="500"/>
+          <line class="tz-line" x1="250" y1="0" x2="250" y2="500"/>
+          <line class="tz-line" x1="292" y1="0" x2="292" y2="500"/>
+          <line class="tz-line" x1="333" y1="0" x2="333" y2="500"/>
+          <line class="tz-line" x1="375" y1="0" x2="375" y2="500"/>
+          <line class="tz-line" x1="417" y1="0" x2="417" y2="500"/>
+          <line class="tz-line" x1="458" y1="0" x2="458" y2="500"/>
+          <line class="tz-line" x1="500" y1="0" x2="500" y2="500" stroke-width=".6" stroke-dasharray="4 2" stroke="rgba(200,169,110,.25)"/>
+          <line class="tz-line" x1="542" y1="0" x2="542" y2="500"/>
+          <line class="tz-line" x1="583" y1="0" x2="583" y2="500"/>
+          <line class="tz-line" x1="625" y1="0" x2="625" y2="500"/>
+          <line class="tz-line" x1="667" y1="0" x2="667" y2="500"/>
+          <line class="tz-line" x1="708" y1="0" x2="708" y2="500"/>
+          <line class="tz-line" x1="750" y1="0" x2="750" y2="500"/>
+          <line class="tz-line" x1="792" y1="0" x2="792" y2="500"/>
+          <line class="tz-line" x1="833" y1="0" x2="833" y2="500"/>
+          <line class="tz-line" x1="875" y1="0" x2="875" y2="500"/>
+          <line class="tz-line" x1="917" y1="0" x2="917" y2="500"/>
+        </g>
+
+        <!-- Equator -->
+        <line x1="0" y1="250" x2="1000" y2="250" stroke="rgba(200,169,110,.1)" stroke-width=".4" stroke-dasharray="3 2"/>
+
+        <!-- Real world map continents (loaded from TopoJSON via D3) -->
+        <g id="continents"></g>
+
+        <!-- Loading indicator (shown until map loads) -->
+        <g id="mapLoader">
+          <text x="500" y="245" text-anchor="middle" fill="rgba(200,169,110,.4)" font-family="DM Mono, monospace" font-size="14">loading map…</text>
+          <text x="500" y="265" text-anchor="middle" fill="rgba(200,169,110,.25)" font-family="DM Mono, monospace" font-size="10" letter-spacing="2">NATURAL EARTH 1:110M</text>
+        </g>
+
+        <!-- Major city dots (interactive) -->
+        <g id="cityDots"></g>
+      </svg>
+
+      <!-- Floating tooltip -->
+      <div class="map-tooltip" id="mapTooltip">
+        <div class="tt-city" id="ttCity">City</div>
+        <div>
+          <span class="tt-time" id="ttTime">00:00:00</span>
+          <span class="tt-ampm" id="ttAmpm">AM</span>
+        </div>
+        <div class="tt-off" id="ttOff">UTC±0</div>
+        <div class="tt-meta" id="ttDate">—</div>
+      </div>
+    </div>
+
+    <!-- Live clock strip -->
+    <div class="map-strip" id="mapStrip"></div>
+
+    <!-- Legend -->
+    <div class="map-legend">
+      <div class="map-legend-item">
+        <span class="legend-swatch" style="background:rgba(200,169,110,.35);"></span>
+        <span>landmass</span>
+      </div>
+      <div class="map-legend-item">
+        <span class="legend-swatch" style="background:#e8d5aa;border-radius:50%;"></span>
+        <span>capital city ★</span>
+      </div>
+      <div class="map-legend-item">
+        <span class="legend-swatch" style="background:rgba(232,213,170,.55);border-radius:50%;"></span>
+        <span>major city</span>
+      </div>
+      <div class="map-legend-item">
+        <span class="legend-swatch" style="background:rgba(200,169,110,.15);border:1px dashed rgba(200,169,110,.4);"></span>
+        <span>time zone meridian (15°)</span>
+      </div>
+    </div>
+  </div>
 </section>
 
 <div id="hero-add-wrap">
@@ -780,11 +978,53 @@ function updateLocal(){
   document.getElementById('lm').textContent=t.m;
   document.getElementById('ls').textContent=t.s;
   document.getElementById('lampm').textContent=t.ap;
-  document.getElementById('ldate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('hloc').textContent=tz.split('/').pop().replace(/_/g,' ');
+  const dateStr=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('ldate').textContent=dateStr;
+  const locName=tz.split('/').pop().replace(/_/g,' ');
+  document.getElementById('hloc').textContent=locName;
   const off=-new Date().getTimezoneOffset()/60;
-  document.getElementById('tzbadge').textContent=tz+' · '+offStr(off);
+  const tzBadgeText=tz+' · '+offStr(off);
+  document.getElementById('tzbadge').textContent=tzBadgeText;
+
+  // Update fullscreen overlay if open
+  const fsOv=document.getElementById('fs-overlay');
+  if(fsOv && fsOv.classList.contains('active')){
+    document.getElementById('fsH').textContent=t.h;
+    document.getElementById('fsM').textContent=t.m;
+    document.getElementById('fsS').textContent=t.s;
+    document.getElementById('fsAmpm').textContent=t.ap;
+    document.getElementById('fsLoc').textContent=locName;
+    document.getElementById('fsDate').textContent=dateStr;
+    document.getElementById('fsTz').textContent=tzBadgeText;
+  }
 }
+
+// ============ FULLSCREEN CLOCK ============
+function openFullscreen(){
+  const ov=document.getElementById('fs-overlay');
+  ov.classList.add('active');
+  document.body.classList.add('fs-open');
+  updateLocal(); // sync immediately
+  // Also request browser fullscreen if supported
+  if(document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen().catch(()=>{});
+  }
+}
+function closeFullscreen(){
+  const ov=document.getElementById('fs-overlay');
+  ov.classList.remove('active');
+  document.body.classList.remove('fs-open');
+  if(document.exitFullscreen && document.fullscreenElement){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
+// ESC key to close
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Escape'){
+    const ov=document.getElementById('fs-overlay');
+    if(ov && ov.classList.contains('active')){closeFullscreen();}
+  }
+});
 
 let cityClocks=[];
 
@@ -1171,11 +1411,353 @@ addAlarm();
 let lastS=0;
 function loop(){
   const n=Date.now();
-  if(n-lastS>=1000){lastS=n;updateLocal();updateCityClocks();checkAlarms();}
+  if(n-lastS>=1000){
+    lastS=n;
+    updateLocal();
+    updateCityClocks();
+    checkAlarms();
+    updateMapStrip();
+    updateMapTooltipLive();
+  }
   requestAnimationFrame(loop);
 }
 loop();
 setInterval(updateTicker,30000);
+
+// ============ WORLD MAP ============
+// Cities with REAL longitude/latitude — D3 will project these accurately
+// Includes major capital cities from every populated region of the world
+const MAP_CITIES = [
+  // North America
+  {name:'Washington DC', tz:'America/New_York',    off:-5,  lon:-77.04, lat:38.91, capital:true},
+  {name:'New York',      tz:'America/New_York',    off:-5,  lon:-74.01, lat:40.71},
+  {name:'Los Angeles',   tz:'America/Los_Angeles', off:-8,  lon:-118.24,lat:34.05},
+  {name:'Chicago',       tz:'America/Chicago',     off:-6,  lon:-87.65, lat:41.88},
+  {name:'Denver',        tz:'America/Denver',      off:-7,  lon:-104.99,lat:39.74},
+  {name:'Vancouver',     tz:'America/Vancouver',   off:-8,  lon:-123.12,lat:49.28},
+  {name:'Ottawa',        tz:'America/Toronto',     off:-5,  lon:-75.70, lat:45.42, capital:true},
+  {name:'Toronto',       tz:'America/Toronto',     off:-5,  lon:-79.38, lat:43.65},
+  {name:'Mexico City',   tz:'America/Mexico_City', off:-6,  lon:-99.13, lat:19.43, capital:true},
+  {name:'Havana',        tz:'America/Havana',      off:-5,  lon:-82.36, lat:23.11, capital:true},
+  {name:'Kingston',      tz:'America/Jamaica',     off:-5,  lon:-76.79, lat:17.97, capital:true},
+  {name:'Guatemala City',tz:'America/Guatemala',   off:-6,  lon:-90.52, lat:14.63, capital:true},
+  {name:'San José',      tz:'America/Costa_Rica',  off:-6,  lon:-84.08, lat:9.93,  capital:true},
+  {name:'Panama City',   tz:'America/Panama',      off:-5,  lon:-79.52, lat:8.98,  capital:true},
+  {name:'Anchorage',     tz:'America/Anchorage',   off:-9,  lon:-149.90,lat:61.22},
+  {name:'Honolulu',      tz:'Pacific/Honolulu',    off:-10, lon:-157.86,lat:21.31},
+
+  // South America
+  {name:'Bogotá',        tz:'America/Bogota',      off:-5,  lon:-74.07, lat:4.71,  capital:true},
+  {name:'Quito',         tz:'America/Guayaquil',   off:-5,  lon:-78.47, lat:-0.18, capital:true},
+  {name:'Lima',          tz:'America/Lima',        off:-5,  lon:-77.04, lat:-12.05,capital:true},
+  {name:'La Paz',        tz:'America/La_Paz',      off:-4,  lon:-68.13, lat:-16.49,capital:true},
+  {name:'Asunción',      tz:'America/Asuncion',    off:-4,  lon:-57.64, lat:-25.26,capital:true},
+  {name:'Santiago',      tz:'America/Santiago',    off:-4,  lon:-70.65, lat:-33.45,capital:true},
+  {name:'Buenos Aires',  tz:'America/Argentina/Buenos_Aires',off:-3, lon:-58.38, lat:-34.60, capital:true},
+  {name:'Montevideo',    tz:'America/Montevideo',  off:-3,  lon:-56.19, lat:-34.90,capital:true},
+  {name:'Brasília',      tz:'America/Sao_Paulo',   off:-3,  lon:-47.93, lat:-15.83,capital:true},
+  {name:'São Paulo',     tz:'America/Sao_Paulo',   off:-3,  lon:-46.63, lat:-23.55},
+  {name:'Caracas',       tz:'America/Caracas',     off:-4,  lon:-66.91, lat:10.49, capital:true},
+
+  // Europe
+  {name:'Reykjavík',     tz:'Atlantic/Reykjavik',  off:0,   lon:-21.94, lat:64.15, capital:true},
+  {name:'Lisbon',        tz:'Europe/Lisbon',       off:0,   lon:-9.14,  lat:38.72, capital:true},
+  {name:'Dublin',        tz:'Europe/Dublin',       off:0,   lon:-6.26,  lat:53.35, capital:true},
+  {name:'London',        tz:'Europe/London',       off:0,   lon:-0.13,  lat:51.51, capital:true},
+  {name:'Paris',         tz:'Europe/Paris',        off:+1,  lon:2.35,   lat:48.86, capital:true},
+  {name:'Madrid',        tz:'Europe/Madrid',       off:+1,  lon:-3.70,  lat:40.42, capital:true},
+  {name:'Brussels',      tz:'Europe/Brussels',     off:+1,  lon:4.35,   lat:50.85, capital:true},
+  {name:'Amsterdam',     tz:'Europe/Amsterdam',    off:+1,  lon:4.90,   lat:52.37, capital:true},
+  {name:'Berlin',        tz:'Europe/Berlin',       off:+1,  lon:13.40,  lat:52.52, capital:true},
+  {name:'Copenhagen',    tz:'Europe/Copenhagen',   off:+1,  lon:12.57,  lat:55.68, capital:true},
+  {name:'Oslo',          tz:'Europe/Oslo',         off:+1,  lon:10.75,  lat:59.91, capital:true},
+  {name:'Stockholm',     tz:'Europe/Stockholm',    off:+1,  lon:18.07,  lat:59.33, capital:true},
+  {name:'Rome',          tz:'Europe/Rome',         off:+1,  lon:12.50,  lat:41.90, capital:true},
+  {name:'Vienna',        tz:'Europe/Vienna',       off:+1,  lon:16.37,  lat:48.21, capital:true},
+  {name:'Prague',        tz:'Europe/Prague',       off:+1,  lon:14.44,  lat:50.08, capital:true},
+  {name:'Warsaw',        tz:'Europe/Warsaw',       off:+1,  lon:21.01,  lat:52.23, capital:true},
+  {name:'Budapest',      tz:'Europe/Budapest',     off:+1,  lon:19.04,  lat:47.50, capital:true},
+  {name:'Helsinki',      tz:'Europe/Helsinki',     off:+2,  lon:24.94,  lat:60.17, capital:true},
+  {name:'Athens',        tz:'Europe/Athens',       off:+2,  lon:23.73,  lat:37.98, capital:true},
+  {name:'Bucharest',     tz:'Europe/Bucharest',    off:+2,  lon:26.10,  lat:44.43, capital:true},
+  {name:'Kyiv',          tz:'Europe/Kiev',         off:+2,  lon:30.52,  lat:50.45, capital:true},
+  {name:'Moscow',        tz:'Europe/Moscow',       off:+3,  lon:37.62,  lat:55.75, capital:true},
+  {name:'Istanbul',      tz:'Europe/Istanbul',     off:+3,  lon:28.98,  lat:41.01},
+  {name:'Ankara',        tz:'Europe/Istanbul',     off:+3,  lon:32.85,  lat:39.93, capital:true},
+
+  // Africa
+  {name:'Rabat',         tz:'Africa/Casablanca',   off:+1,  lon:-6.85,  lat:33.97, capital:true},
+  {name:'Algiers',       tz:'Africa/Algiers',      off:+1,  lon:3.09,   lat:36.75, capital:true},
+  {name:'Tunis',         tz:'Africa/Tunis',        off:+1,  lon:10.18,  lat:36.81, capital:true},
+  {name:'Tripoli',       tz:'Africa/Tripoli',      off:+2,  lon:13.18,  lat:32.89, capital:true},
+  {name:'Cairo',         tz:'Africa/Cairo',        off:+2,  lon:31.24,  lat:30.04, capital:true},
+  {name:'Khartoum',      tz:'Africa/Khartoum',     off:+2,  lon:32.56,  lat:15.50, capital:true},
+  {name:'Addis Ababa',   tz:'Africa/Addis_Ababa',  off:+3,  lon:38.74,  lat:9.03,  capital:true},
+  {name:'Nairobi',       tz:'Africa/Nairobi',      off:+3,  lon:36.82,  lat:-1.29, capital:true},
+  {name:'Dar es Salaam', tz:'Africa/Dar_es_Salaam',off:+3,  lon:39.28,  lat:-6.79},
+  {name:'Kampala',       tz:'Africa/Kampala',      off:+3,  lon:32.58,  lat:0.35,  capital:true},
+  {name:'Kigali',        tz:'Africa/Kigali',       off:+2,  lon:30.06,  lat:-1.95, capital:true},
+  {name:'Dakar',         tz:'Africa/Dakar',        off:0,   lon:-17.45, lat:14.72, capital:true},
+  {name:'Abuja',         tz:'Africa/Lagos',        off:+1,  lon:7.49,   lat:9.08,  capital:true},
+  {name:'Lagos',         tz:'Africa/Lagos',        off:+1,  lon:3.38,   lat:6.52},
+  {name:'Accra',         tz:'Africa/Accra',        off:0,   lon:-0.20,  lat:5.60,  capital:true},
+  {name:'Kinshasa',      tz:'Africa/Kinshasa',     off:+1,  lon:15.27,  lat:-4.44, capital:true},
+  {name:'Luanda',        tz:'Africa/Luanda',       off:+1,  lon:13.23,  lat:-8.84, capital:true},
+  {name:'Johannesburg',  tz:'Africa/Johannesburg', off:+2,  lon:28.04,  lat:-26.20},
+  {name:'Pretoria',      tz:'Africa/Johannesburg', off:+2,  lon:28.19,  lat:-25.75, capital:true},
+  {name:'Cape Town',     tz:'Africa/Johannesburg', off:+2,  lon:18.42,  lat:-33.92},
+  {name:'Harare',        tz:'Africa/Harare',       off:+2,  lon:31.05,  lat:-17.83, capital:true},
+  {name:'Maputo',        tz:'Africa/Maputo',       off:+2,  lon:32.58,  lat:-25.97, capital:true},
+  {name:'Antananarivo',  tz:'Indian/Antananarivo', off:+3,  lon:47.51,  lat:-18.88, capital:true},
+
+  // Middle East
+  {name:'Jerusalem',     tz:'Asia/Jerusalem',      off:+2,  lon:35.21,  lat:31.77, capital:true},
+  {name:'Beirut',        tz:'Asia/Beirut',         off:+2,  lon:35.51,  lat:33.89, capital:true},
+  {name:'Damascus',      tz:'Asia/Damascus',       off:+2,  lon:36.28,  lat:33.51, capital:true},
+  {name:'Amman',         tz:'Asia/Amman',          off:+2,  lon:35.93,  lat:31.95, capital:true},
+  {name:'Baghdad',       tz:'Asia/Baghdad',        off:+3,  lon:44.36,  lat:33.31, capital:true},
+  {name:'Riyadh',        tz:'Asia/Riyadh',         off:+3,  lon:46.68,  lat:24.71, capital:true},
+  {name:'Sana\'a',       tz:'Asia/Aden',           off:+3,  lon:44.21,  lat:15.35, capital:true},
+  {name:'Tehran',        tz:'Asia/Tehran',         off:+3.5,lon:51.39,  lat:35.69, capital:true},
+  {name:'Doha',          tz:'Asia/Qatar',          off:+3,  lon:51.53,  lat:25.29, capital:true},
+  {name:'Manama',        tz:'Asia/Bahrain',        off:+3,  lon:50.58,  lat:26.23, capital:true},
+  {name:'Kuwait City',   tz:'Asia/Kuwait',         off:+3,  lon:47.98,  lat:29.38, capital:true},
+  {name:'Muscat',        tz:'Asia/Muscat',         off:+4,  lon:58.55,  lat:23.59, capital:true},
+  {name:'Abu Dhabi',     tz:'Asia/Dubai',          off:+4,  lon:54.37,  lat:24.47, capital:true},
+  {name:'Dubai',         tz:'Asia/Dubai',          off:+4,  lon:55.30,  lat:25.20},
+
+  // Central & South Asia
+  {name:'Kabul',         tz:'Asia/Kabul',          off:+4.5,lon:69.17,  lat:34.53, capital:true},
+  {name:'Tashkent',      tz:'Asia/Tashkent',       off:+5,  lon:69.24,  lat:41.31, capital:true},
+  {name:'Islamabad',     tz:'Asia/Karachi',        off:+5,  lon:73.05,  lat:33.73, capital:true},
+  {name:'Karachi',       tz:'Asia/Karachi',        off:+5,  lon:67.01,  lat:24.86},
+  {name:'New Delhi',     tz:'Asia/Kolkata',        off:+5.5,lon:77.21,  lat:28.61, capital:true},
+  {name:'Mumbai',        tz:'Asia/Kolkata',        off:+5.5,lon:72.88,  lat:19.08},
+  {name:'Kathmandu',     tz:'Asia/Kathmandu',      off:+5.75,lon:85.32, lat:27.72, capital:true},
+  {name:'Colombo',       tz:'Asia/Colombo',        off:+5.5,lon:79.86,  lat:6.93,  capital:true},
+  {name:'Dhaka',         tz:'Asia/Dhaka',          off:+6,  lon:90.41,  lat:23.81, capital:true},
+  {name:'Thimphu',       tz:'Asia/Thimphu',        off:+6,  lon:89.64,  lat:27.47, capital:true},
+
+  // East & Southeast Asia
+  {name:'Yangon',        tz:'Asia/Yangon',         off:+6.5,lon:96.15,  lat:16.87, capital:true},
+  {name:'Bangkok',       tz:'Asia/Bangkok',        off:+7,  lon:100.50, lat:13.76, capital:true},
+  {name:'Vientiane',     tz:'Asia/Vientiane',      off:+7,  lon:102.63, lat:17.97, capital:true},
+  {name:'Phnom Penh',    tz:'Asia/Phnom_Penh',     off:+7,  lon:104.92, lat:11.56, capital:true},
+  {name:'Hanoi',         tz:'Asia/Ho_Chi_Minh',    off:+7,  lon:105.84, lat:21.03, capital:true},
+  {name:'Jakarta',       tz:'Asia/Jakarta',        off:+7,  lon:106.87, lat:-6.21, capital:true},
+  {name:'Kuala Lumpur',  tz:'Asia/Kuala_Lumpur',   off:+8,  lon:101.69, lat:3.14,  capital:true},
+  {name:'Singapore',     tz:'Asia/Singapore',      off:+8,  lon:103.82, lat:1.35,  capital:true},
+  {name:'Manila',        tz:'Asia/Manila',         off:+8,  lon:120.98, lat:14.60, capital:true},
+  {name:'Beijing',       tz:'Asia/Shanghai',       off:+8,  lon:116.41, lat:39.90, capital:true},
+  {name:'Shanghai',      tz:'Asia/Shanghai',       off:+8,  lon:121.47, lat:31.23},
+  {name:'Hong Kong',     tz:'Asia/Hong_Kong',      off:+8,  lon:114.17, lat:22.32},
+  {name:'Taipei',        tz:'Asia/Taipei',         off:+8,  lon:121.57, lat:25.03, capital:true},
+  {name:'Ulaanbaatar',   tz:'Asia/Ulaanbaatar',    off:+8,  lon:106.92, lat:47.89, capital:true},
+  {name:'Seoul',         tz:'Asia/Seoul',          off:+9,  lon:126.98, lat:37.57, capital:true},
+  {name:'Pyongyang',     tz:'Asia/Pyongyang',      off:+9,  lon:125.75, lat:39.04, capital:true},
+  {name:'Tokyo',         tz:'Asia/Tokyo',          off:+9,  lon:139.69, lat:35.69, capital:true},
+
+  // Oceania
+  {name:'Canberra',      tz:'Australia/Sydney',    off:+10, lon:149.13, lat:-35.28, capital:true},
+  {name:'Sydney',        tz:'Australia/Sydney',    off:+10, lon:151.21, lat:-33.87},
+  {name:'Melbourne',     tz:'Australia/Melbourne', off:+10, lon:144.96, lat:-37.81},
+  {name:'Wellington',    tz:'Pacific/Auckland',    off:+12, lon:174.78, lat:-41.29, capital:true},
+  {name:'Auckland',      tz:'Pacific/Auckland',    off:+12, lon:174.76, lat:-36.85},
+  {name:'Suva',          tz:'Pacific/Fiji',        off:+12, lon:178.44, lat:-18.13, capital:true},
+  {name:'Port Moresby',  tz:'Pacific/Port_Moresby',off:+10, lon:147.18, lat:-9.44,  capital:true},
+];
+
+// Fallback approximate screen coords for when D3 isn't available yet
+// These match the same equirectangular projection D3 will use (scale 159, translate [500,250])
+function projectLonLat(lon, lat){
+  // Equirectangular: x = center + scale * lon_rad, y = center - scale * lat_rad
+  const scale = 159;
+  const x = 500 + scale * (lon * Math.PI / 180);
+  const y = 250 - scale * (lat * Math.PI / 180);
+  return [x, y];
+}
+
+// Pre-calculate screen coords for each city
+MAP_CITIES.forEach(c => {
+  const [x, y] = projectLonLat(c.lon, c.lat);
+  c.x = x;
+  c.y = y;
+});
+
+function buildWorldMap(){
+  const g = document.getElementById('cityDots');
+  if(!g) return;
+
+  // Load REAL world map from TopoJSON data via D3
+  loadRealWorldMap();
+
+  // Add interactive city dots
+  MAP_CITIES.forEach((c,i)=>{
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('class', c.capital ? 'city-dot capital' : 'city-dot');
+    dot.setAttribute('cx', c.x);
+    dot.setAttribute('cy', c.y);
+    dot.setAttribute('r', c.capital ? 2.2 : 1.6);
+    dot.dataset.idx = i;
+    g.appendChild(dot);
+
+    // Label only appears on hover (via JS) — too many cities for always-on labels
+    dot.addEventListener('mouseenter', e => showMapTooltip(e, c, dot));
+    dot.addEventListener('mousemove', e => positionTooltip(e));
+    dot.addEventListener('mouseleave', () => hideMapTooltip(dot));
+    dot.addEventListener('click', e => {
+      showMapTooltip(e, c, dot);
+      setTimeout(() => hideMapTooltip(dot), 2500);
+    });
+  });
+  buildMapStrip();
+}
+
+// Load real world map using D3 + TopoJSON
+async function loadRealWorldMap(){
+  // Check if D3 and topojson are loaded
+  if(typeof d3 === 'undefined' || typeof topojson === 'undefined'){
+    console.warn('D3 or topojson not loaded, skipping real map');
+    setTimeout(loadRealWorldMap, 300); // retry shortly
+    return;
+  }
+
+  const continentsG = document.getElementById('continents');
+  const loader = document.getElementById('mapLoader');
+  if(!continentsG) return;
+
+  // Try multiple CDN sources for world atlas data (fallback chain)
+  const DATA_URLS = [
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json',
+    'https://unpkg.com/world-atlas@2/countries-110m.json',
+    'https://cdn.skypack.dev/world-atlas@2/countries-110m.json',
+  ];
+
+  let topoData = null;
+  for(const url of DATA_URLS){
+    try {
+      const resp = await fetch(url);
+      if(resp.ok){
+        topoData = await resp.json();
+        break;
+      }
+    } catch(e){
+      console.warn('Failed to load from', url, e.message);
+    }
+  }
+
+  if(!topoData){
+    console.warn('Could not load world map data from any CDN');
+    if(loader) loader.innerHTML = '<text x="500" y="250" text-anchor="middle" fill="rgba(200,169,110,.35)" font-family="DM Mono, monospace" font-size="11">map data unavailable</text>';
+    return;
+  }
+
+  try {
+    // Convert TopoJSON to GeoJSON
+    const countries = topojson.feature(topoData, topoData.objects.countries);
+
+    // Use equirectangular projection (matches our viewBox 1000x500)
+    const projection = d3.geoEquirectangular()
+      .scale(159)  // Adjusted to fit 1000x500 viewBox
+      .translate([500, 250]);
+
+    const pathGen = d3.geoPath(projection);
+
+    // Render each country as a path
+    countries.features.forEach(feature => {
+      const d = pathGen(feature);
+      if(!d) return;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('class', 'country');
+      path.setAttribute('d', d);
+      path.setAttribute('data-name', feature.properties.name || '');
+      continentsG.appendChild(path);
+    });
+
+    // Remove loader
+    if(loader) loader.remove();
+    console.log('✓ Loaded real world map:', countries.features.length, 'countries');
+  } catch(e){
+    console.error('Error rendering world map:', e);
+  }
+}
+
+function showMapTooltip(e, city, dot){
+  const tt = document.getElementById('mapTooltip');
+  const t = getT(city.tz);
+  if(!t) return;
+  document.getElementById('ttCity').textContent = city.name + (city.capital ? ' ★' : '');
+  document.getElementById('ttTime').textContent = `${t.h}:${t.m}:${t.s}`;
+  document.getElementById('ttAmpm').textContent = t.ap;
+  document.getElementById('ttOff').textContent = offStr(city.off);
+  document.getElementById('ttDate').innerHTML = `<span class="di ${dp(t.h24)}"></span>${t.date}`;
+  tt.classList.add('visible');
+  if(dot){dot.setAttribute('r', 4.5); dot.classList.add('active');}
+  positionTooltip(e);
+  tt._city = city;
+}
+
+function positionTooltip(e){
+  const tt = document.getElementById('mapTooltip');
+  const container = tt.parentElement;
+  const rect = container.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  tt.style.left = x + 'px';
+  tt.style.top = y + 'px';
+}
+
+function hideMapTooltip(dot){
+  const tt = document.getElementById('mapTooltip');
+  tt.classList.remove('visible');
+  tt._city = null;
+  if(dot){
+    const isCapital = dot.classList.contains('capital');
+    dot.setAttribute('r', isCapital ? 2.2 : 1.6);
+    dot.classList.remove('active');
+  }
+}
+
+// Update tooltip time live while hovering
+function updateMapTooltipLive(){
+  const tt = document.getElementById('mapTooltip');
+  if(!tt || !tt.classList.contains('visible') || !tt._city) return;
+  const t = getT(tt._city.tz);
+  if(!t) return;
+  document.getElementById('ttTime').textContent = `${t.h}:${t.m}:${t.s}`;
+  document.getElementById('ttAmpm').textContent = t.ap;
+}
+
+// Build the scrolling strip below map
+function buildMapStrip(){
+  const strip = document.getElementById('mapStrip');
+  if(!strip) return;
+  strip.innerHTML = '';
+  // Show 10 selected key cities
+  const KEY = ['Los Angeles','New York','London','Paris','Dubai','Mumbai','Singapore','Tokyo','Sydney','Auckland'];
+  KEY.forEach(name => {
+    const city = MAP_CITIES.find(c => c.name === name);
+    if(!city) return;
+    const el = document.createElement('div');
+    el.className = 'map-strip-item';
+    el.dataset.tz = city.tz;
+    el.dataset.name = name;
+    el.innerHTML = `<span class="map-strip-city">${name}</span><span class="map-strip-time">--:--</span>`;
+    strip.appendChild(el);
+  });
+  updateMapStrip();
+}
+
+function updateMapStrip(){
+  document.querySelectorAll('.map-strip-item').forEach(el => {
+    const t = getT(el.dataset.tz);
+    if(!t) return;
+    el.querySelector('.map-strip-time').textContent = `${t.h}:${t.m} ${t.ap}`;
+  });
+}
+
+// Kick off after DOM
+buildWorldMap();
 
 // DARK MODE
 function toggleDark(){
@@ -1197,5 +1779,27 @@ function updateDMUI(isDark){
   if(saved===null)localStorage.setItem('dm','0');
 })();
 </script>
+<!-- ========== FULLSCREEN CLOCK OVERLAY ========== -->
+<div id="fs-overlay">
+  <button id="fs-close" onclick="closeFullscreen()" title="Close (ESC)" aria-label="Close fullscreen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 6l12 12M6 18L18 6"/>
+    </svg>
+  </button>
+  <div class="fs-wrap">
+    <div class="fs-label" id="fsLabel">current time</div>
+    <div class="fs-loc" id="fsLoc">—</div>
+    <div style="display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;">
+      <div class="fs-time">
+        <span id="fsH">00</span><span class="col">:</span><span id="fsM">00</span><span class="col">:</span><span id="fsS" class="fs-seconds">00</span>
+      </div>
+      <span class="fs-ampm" id="fsAmpm">AM</span>
+    </div>
+    <div class="fs-date" id="fsDate">—</div>
+    <div class="fs-tz" id="fsTz">UTC</div>
+  </div>
+  <div class="fs-hint">press <kbd>ESC</kbd> to exit</div>
+</div>
+
 </body>
 </html>
